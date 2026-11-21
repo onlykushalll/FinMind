@@ -18,8 +18,10 @@ import {
   AlertTriangle,
   Calendar,
   Plus,
+  Download,
 } from 'lucide-react';
 import { getDashboardSummary, type DashboardSummary } from '@/api/dashboard';
+import { getWeeklyDigestPDF } from '@/api/insights';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/lib/currency';
 
@@ -33,6 +35,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -97,6 +100,25 @@ export function Dashboard() {
     },
   ] as const;
 
+  const handleDownloadWeeklyDigest = async () => {
+    setLoadingPdf(true);
+    try {
+      const pdfBlob = await getWeeklyDigestPDF(month);
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `weekly-financial-summary-${month}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download weekly digest:', error);
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
   const transactions = data?.recent_transactions ?? [];
   const upcomingBills = data?.upcoming_bills ?? [];
   const categoryBreakdown = data?.category_breakdown ?? [];
@@ -123,9 +145,22 @@ export function Dashboard() {
               <Calendar className="w-4 h-4" />
               This Month
             </Button>
-            <Button variant="financial" size="sm" onClick={() => navigate('/expenses')}>
+            <Button 
+              variant="financial" 
+              size="sm" 
+              onClick={() => navigate('/expenses')}
+            >
               <Plus className="w-4 h-4" />
               Add Transaction
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownloadWeeklyDigest}
+              disabled={loadingPdf}
+            >
+              <Download className="w-4 h-4" />
+              {loadingPdf ? 'Generating...' : 'Weekly Summary'}
             </Button>
           </div>
         </div>

@@ -26,9 +26,17 @@ export async function getBudgetSuggestion(params?: {
   geminiApiKey?: string;
   persona?: string;
 }): Promise<BudgetSuggestion> {
-  const monthQuery = params?.month ? `?month=${encodeURIComponent(params.month)}` : '';
+  const monthQuery = params?.month ? `?month=${encodeURIComponent(params.month)}` = '';
   const headers: Record<string, string> = {};
   if (params?.geminiApiKey) headers['X-Gemini-Api-Key'] = params.geminiApiKey;
   if (params?.persona) headers['X-Insight-Persona'] = params.persona;
   return api<BudgetSuggestion>(`/insights/budget-suggestion${monthQuery}`, { headers });
+}
+
+export async function getWeeklyDigestPDF(month?: string): Promise<Blob> {
+  const monthQuery = month ? `?month=${encodeURIComponent(month)}` = '';
+  const response = await api<Blob>(`/insights/weekly-pdf${monthQuery}`, {
+    responseType: 'blob',
+  });
+  return response;
 }
